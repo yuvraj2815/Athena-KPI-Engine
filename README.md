@@ -197,4 +197,4 @@ This prototype was built for the BusinessIntelligence.ai Round 2 challenge submi
 
 ---
 
-**Team Athena**
+**Team NiceGuys**
