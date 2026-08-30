@@ -1,0 +1,16 @@
+[
+  {
+    "insight_id": "analyst-West-2024-09-24/2024-09-30",
+    "action": "reject",
+    "corrected_driver": null,
+    "note": null,
+    "timestamp": "2026-08-30T09:55:49.012237+00:00"
+  },
+  {
+    "insight_id": "analyst-West-2024-09-24/2024-09-30",
+    "action": "correct",
+    "corrected_driver": "price",
+    "note": null,
+    "timestamp": "2026-08-30T09:55:52.107122+00:00"
+  }
+]

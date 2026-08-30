@@ -1,0 +1,17 @@
+{
+  "sales_transactions": {
+    "source": "sales.db",
+    "grain": "daily",
+    "last_updated": "2024-09-30"
+  },
+  "marketing_spend": {
+    "source": "marketing_spend.csv",
+    "grain": "weekly",
+    "last_updated": "2024-09-16"
+  },
+  "support_tickets": {
+    "source": "support_tickets.json",
+    "grain": "event",
+    "last_updated": "2024-09-30"
+  }
+}
