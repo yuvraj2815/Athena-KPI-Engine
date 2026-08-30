@@ -1,0 +1,14 @@
+[
+  "tests/test_engine.py::test_abstention_triggers_on_simulated_outage",
+  "tests/test_engine.py::test_contract_loads_and_validates",
+  "tests/test_engine.py::test_flagship_scenario_hedges_on_stale_source",
+  "tests/test_engine.py::test_flagship_scenario_is_flagged_material",
+  "tests/test_engine.py::test_narrative_fallback_used_with_no_api_key",
+  "tests/test_engine.py::test_personas_produce_distinct_narratives",
+  "tests/test_engine.py::test_pvm_reconciles_exactly",
+  "tests/test_engine.py::test_security_blocks_out_of_region_rows_for_regional_persona",
+  "tests/test_engine.py::test_security_drops_pii_column_for_every_persona",
+  "tests/test_engine.py::test_sparse_history_hedges_at_low_confidence",
+  "tests/test_engine.py::test_telemetry_is_recorded_for_every_stage",
+  "tests/test_engine.py::test_unknown_kpi_raises"
+]
