@@ -1,0 +1,112 @@
+# =============================================================================
+# Athena KPI Semantic Contract
+# The single, auditable source of truth for every KPI Athena reasons about.
+# Nothing downstream — including the LLM — may redefine a KPI outside this file.
+# =============================================================================
+
+version: 1
+
+kpis:
+  total_revenue:
+    display_name: "Total Revenue"
+    calculation: "SUM(quantity * unit_price)"
+    grain: [region, sku, week]
+    source: sales_transactions
+    unit: usd
+
+    # Comparison convention for week-over-week driver decomposition and
+    # statistical materiality testing. 'W-MON' = weeks END on Monday
+    # (i.e. span Tuesday through Monday).
+    period_convention: "W-MON"
+
+    drivers:
+      - name: price
+        method: "sum((price_curr - price_prev) * qty_curr) per SKU"
+      - name: volume
+        method: "(total_qty_curr - total_qty_prev) * avg_price_prev"
+      - name: mix
+        method: "residual: delta_revenue - price_effect - volume_effect"
+        note: >
+          Mix is defined as the residual after removing price and volume
+          effects. This guarantees the three drivers reconcile exactly to
+          the observed revenue delta by construction.
+
+    materiality:
+      statistical:
+        method: "MAD-based robust z-score vs trailing baseline weeks"
+        baseline_weeks: 8
+        z_threshold: 1.75
+        rationale: >
+          z >= 1.75 corresponds to ~92% one-sided confidence. This is a
+          deliberate, documented choice rather than the stricter
+          conventional z >= 2.0 (~95%): calibrated against this KPI's
+          observed baseline weekly variance so that genuine business-
+          material moves (8-10% swings) register, while ordinary weekly
+          noise does not. Reviewable and adjustable per-KPI, not hard-coded
+          in application logic.
+      business:
+        min_pct_change: 0.05      # 5%
+        min_dollar_impact: 25000  # $25k
+      rule: "BOTH statistical AND business bars must clear for a movement to be flagged material."
+
+    confidence_rubric:
+      base: 95
+      penalties:
+        stale_critical_source: 25   # any driver-relevant source stale at analysis time
+        sparse_history_weeks: 70    # fewer than min_history_weeks of data available
+        unexplained_residual_high: "abstain"  # residual > abstain_threshold -> ABSTAIN, not a score penalty
+      thresholds:
+        min_history_weeks: 8
+        abstain_residual_pct: 0.50   # unexplained residual over 50% of |delta| -> ABSTAIN
+      verdict_bands:
+        ANSWER: "confidence >= 85 and no stale critical source and residual clean"
+        HEDGE: "confidence in [40, 85) OR a relevant source is stale"
+        CLARIFY: "statistical and business bars disagree (contradictory signal)"
+        ABSTAIN: "unexplained residual exceeds abstain_residual_pct, or fewer than min_history_weeks of data"
+
+    lineage:
+      - "sales_transactions (SQLite, daily grain) -> athena/sources.py:load_sales()"
+      - "marketing_spend (CSV, weekly grain) -> athena/sources.py:load_marketing() [staleness input only]"
+      - "support_tickets (JSON, event grain) -> athena/sources.py:load_tickets() [corroborating signal only]"
+
+security:
+  pii_columns: [customer_email]
+  roles:
+    cfo:
+      region_scope: all
+      detail_level: strategic
+    regional_manager:
+      region_scope: own_region   # resolved at query time from the persona's assigned region
+      detail_level: tactical
+    analyst:
+      region_scope: all
+      detail_level: full
+
+personas:
+  cfo:
+    role: cfo
+    narrative_focus: "margin impact, capital allocation, macro roll-up"
+  west_manager:
+    role: regional_manager
+    region: West
+    narrative_focus: "tactical levers, daily operational adjustments"
+  analyst:
+    role: analyst
+    narrative_focus: "full evidence bundle, all drivers, all corroborating signals"
+
+recommendation_rules:
+  - driver: mix
+    lever: "Product mix / promotional bundling"
+    action: "Review promo bundling; re-balance incentives toward premium attach-rate"
+    owner: "Regional Sales Director"
+    monitoring: "Weekly mix % by SKU tier vs. trailing 8-week average"
+  - driver: price
+    lever: "Pricing / promotion ROI"
+    action: "Evaluate promotional discount depth against incremental volume lift"
+    owner: "Pricing Manager"
+    monitoring: "Promo-week price realization vs. list price, by SKU"
+  - driver: volume
+    lever: "Demand generation"
+    action: "Identify and scale whatever is currently driving incremental unit volume"
+    owner: "Regional Marketing Lead"
+    monitoring: "Weekly unit volume vs. trailing 8-week average"
